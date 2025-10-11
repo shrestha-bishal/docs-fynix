@@ -6,8 +6,11 @@ import starlight from '@astrojs/starlight';
 export default defineConfig({
 	integrations: [
 		starlight({
-			title: 'My Docs',
-			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/withastro/starlight' }],
+			title: 'Fynix PHP',
+			social: [
+				{ icon: 'github', label: 'GitHub', href: 'https://github.com/shrestha-bishal/fynix' },
+				{ icon: 'seti:php', label: 'Packagist', href: 'https://packagist.org/packages/bishalshrestha/fynix' },
+			],
 			sidebar: [
 				{
 					label: 'Guides',
