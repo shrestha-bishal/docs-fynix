@@ -4,156 +4,224 @@ title: Introduction
 sidebar_position: 1
 ---
 
-# Fynix — The Modern PHP Validation Engine
+# Fynix -Modern validation for PHP DTOs and nested object graphs
 
-**Fynix** is a modern, extensible validation engine for PHP — designed to handle everything from **primitive data types** to **deeply nested objects** with speed, clarity, and flexibility.
+Fynix is a framework-agnostic PHP validation library built for real-world applications that need more than simple scalar checks. It validates primitive values, uploaded files, nested DTOs, arrays of objects, and deeply structured domain models without forcing you into a specific framework.
 
-Inspired by the simplicity of Laravel’s validation, but built as a **framework-agnostic core**, Fynix empowers developers to define, compose, and reuse validation logic across any modern PHP application.
+Whether you are building an API, a form workflow, an import pipeline, or a domain service layer, Fynix gives you a consistent way to express rules, validate objects, and normalize errors for client output.
 
 ---
 
 ## Why Fynix?
 
-Most validation libraries stop at arrays and simple rules.  
-Fynix goes further — enabling **object-level validation**, **nested DTO validation**, and **typed rule definitions** that scale effortlessly with complex application domains.
+Many validation libraries stop at basic field validation. Fynix is designed for the next layer:
 
-**Key Highlights:**
-- Type-safe, object-oriented validation
-- Nested and recursive validation support
-- Flexible rule registration and extension system
-- Context-aware error messages
-- Lightweight and high-performance core
-- Framework-agnostic — works with Laravel, Symfony, Slim, or standalone
+- validating nested object properties and DTO graphs
+- validating arrays of domain objects
+- reusing validation rules centrally via a registry
+- returning consistent structured errors for forms and APIs
+- staying fast, explicit, and framework-agnostic
 
-## Features
-- **Comprehensive Validation**: Strings, numbers, emails, phone numbers, passwords, images, arrays of images, nested objects, and arrays of objects.
-- **Extensible Architecture**: Easily add custom validation rules or extend built-in validators.
-- **Validator Options**: Fine-grained control over required fields, length, numeric ranges, file types, and more.
-- **Nested & Array Validation**: Validate nested objects and arrays of objects using registered rules.
-- **Error Normalization**: Flatten nested error structures for easy form binding.
-- **Centralized Registry**: Register and retrieve validation rules for any class.
-- **Open Source**: MIT-licensed and open for contributions.
+The result is a validation layer that remains clear as your app grows from simple forms to enterprise-grade domain models.
+
+## Core strengths
+
+- Primitive validation for strings, numbers, emails, usernames, passwords, and phone numbers
+- File validation for single and multiple uploaded images
+- Object validation for nested DTOs and domain models
+- Array validation for collections of related objects
+- Reusable class-level validation registration through `ValidationRegistry`
+- Error flattening for form binding and JSON API responses
+- Fluent configuration for expressive builder-style rule definitions
 
 ---
 
-## Example Overview
+## Installation
 
-Here’s a simple example of how Fynix validates nested data objects:
-```php
-<?php 
-namespace App\Dto\Quote;;
+Install with Composer:
 
-use App\Dto\Address\AddressDto;
-use App\Traits\ArrayConvertible;
-use DateTime;
-
-class FreightDto {
-    use ArrayConvertible;
-
-    public ?int $id = null;
-
-    /**@var PackageDto[] */
-    public array $packages = [];
-    public ?string $customerName;
-    public ?DateTime $shippingDate;
-    public bool $containsDangerousGoods = false;
-    public AddressDto $pickupAddress;
-    public AddressDto $deliveryAddress;
-}
+```bash
+composer require bishalshrestha/fynix
 ```
 
-### Nested DTO Structure
-```
-$freight = new FreightDto();
-$freight->packages[] = (new PackageDto())->items[] = new ItemDto();
-$freight->pickupAddress = new AddressDto();
-$freight->deliveryAddress = new AddressDto();
-```
+The library requires PHP 8.1 or newer and follows PSR-4 autoloading.
 
-### Setting Up Example Validation
-Validation rules are registered using the `ValidationRegistry`. You can organize rules by DTO type for better structure and maintainability.
+---
+
+## Quick start
+
+Define a DTO and register validation rules:
+
 ```php
 <?php
-class ValidationRuleServiceProvider extends ServiceProvider
+
+use Fynix\ValidationRegistry;
+use Fynix\ValidationHandler;
+use Fynix\Validators\EmailValidator;
+use Fynix\Validators\ObjectValidator;
+use Fynix\Validators\StringValidator;
+
+final class Address
 {
-    /**
-     * Register services.
-     */
-    public function register(): void
-    {
-        self::registerDimensionValidation();
-        self::registerItemValidation();
-        self::registerAddressValidation();
-        self::registerShippingValidation();
-        self::registerPackageValidation();
-    }
+    public string $street = '';
+    public string $city = '';
+}
 
-    private static function registerDimensionValidation() : void {
-        ValidationRegistry::register(DimensionDto::class, function(DimensionDto $dimension) {
-            return [
-                new NumberValidator('Length', 'lengthCm', new NumberValidationOptions(number: [1, 1800])),
-                new NumberValidator('Width', 'widthCm', new NumberValidationOptions(number: [1, 1800])),
-                new NumberValidator('Height', 'heightCm', new NumberValidationOptions(number: [1, 2000])),
-                new NumberValidator('Weight', 'weightKg', new NumberValidationOptions(number: [1, 1000]))
-            ];
-        });
-    }
+final class User
+{
+    public string $firstName = '';
+    public string $email = '';
+    public ?Address $address = null;
+}
 
-    private static function registerItemValidation() : void
-    {
-       ValidationRegistry::register(ItemDto::class, function (ItemDto $dto) {
-            return [
-                new StringValidator('Description', 'description'),
-                new ObjectValidator('dimension', DimensionDto::class),
-           ];
-       });
-    }
+ValidationRegistry::register(Address::class, static fn (Address $address): array => [
+    (new StringValidator('Street', 'street'))->min(3)->max(120),
+    (new StringValidator('City', 'city'))->min(2)->max(80),
+]);
 
-    private static function registerAddressValidation() : void 
-    {
-        ValidationRegistry::register(AddressDto::class, function(AddressDto $dto) {
-            return [
-                new StringValidator('Suburb', 'suburb'),
-                new NumberValidator('Postcode', 'postcode', new NumberValidationOptions(length: [2, 10])),
-                new StringValidator('State', 'state', new StringValidationOptions(length: [2, 6])),
-                new StringValidator('Country', 'countryCode', new StringValidationOptions(length: [2, 4]))
-            ];
-        });
-    }
+ValidationRegistry::register(User::class, static fn (User $user): array => [
+    (new StringValidator('First name', 'firstName'))->min(2)->max(50),
+    (new EmailValidator('Email', 'email'))->length(6, 180),
+    new ObjectValidator('address', Address::class),
+]);
 
-    private static function registerShippingValidation(): void 
-    {
-        ValidationRegistry::register(FreightDto::class, function(FreightDto $dto) {
-            return[
-                new ObjectArrayValidator('packages', PackageDto::class),
-                new StringValidator('Customer name', 'customerName', new StringValidationOptions(length: [0, 50], isRequired: false)),
-                new ObjectValidator('pickupAddress', AddressDto::class),
-                new ObjectValidator('deliveryAddress', AddressDto::class),
-            ];
-        });
-    }
+$user = new User();
+$user->firstName = 'A';
+$user->email = 'not-an-email';
+$user->address = new Address();
 
-    private static function registerPackageValidation(): void {
-        ValidationRegistry::register(PackageDto::class, function(PackageDto $dto) {
-            return [
-                new StringValidator('Package Type', 'type'),
-                new StringValidator('Description', 'description', new StringValidationOptions(length: [0, 50], isRequired: false)),
-                new ObjectValidator('dimensions', DimensionDto::class),
-                new ObjectArrayValidator('items', ItemDto::class)
-            ];
-        });
-    }
+$errors = ValidationHandler::validate($user);
+print_r($errors);
+```
+
+You will receive a nested validation result structure, and you can flatten it when you need a form-friendly or API-friendly key layout.
+
+---
+
+## Common validation patterns
+
+### Direct field validation
+
+```php
+use Fynix\Validators\StringValidator;
+
+$error = (new StringValidator('First name', 'firstName'))
+    ->min(2)
+    ->max(50)
+    ->validateField('A');
+```
+
+This is useful when validating an individual form field or a single request value.
+
+### Validating all applicable errors on a field
+
+```php
+use Fynix\Validators\PasswordValidator;
+
+$errors = (new PasswordValidator('Password', 'password'))
+    ->validateFieldAll('abc');
+```
+
+This returns every applicable password error instead of only the first one.
+
+### Validating nested objects
+
+```php
+use Fynix\ValidationHandler;
+
+$errors = ValidationHandler::validate($dto);
+```
+
+Objects are resolved recursively through the registry, so nested validation rules remain reusable and consistent.
+
+### Flattening errors for forms and APIs
+
+```php
+use Fynix\ValidationHandler;
+
+$flat = ValidationHandler::flattenValidationErrors($errors);
+```
+
+This converts nested keys into a dot-notated structure such as `address.city`.
+
+---
+
+## Built-in validator categories
+
+Fynix includes validators for:
+
+- strings
+- numbers
+- emails
+- phone numbers
+- usernames
+- passwords
+- single images
+- multiple images
+- nested objects
+- arrays of nested objects
+
+See the validator reference pages for the complete API and examples.
+
+---
+
+## Recommended architecture
+
+For medium and large applications, the strongest pattern is:
+
+1. Create a DTO or request model.
+2. Define validation rules for the class in `ValidationRegistry`.
+3. Validate the object in a service or controller boundary.
+4. Convert errors to a flat structure for UI or API output.
+
+This gives you a clean separation between domain data and validation logic while keeping the codebase easy to extend.
+
+---
+
+## Example real-world use case
+
+A checkout or order DTO may contain nested items and addresses, each with their own validation rules.
+
+```php
+final class Order
+{
+    public string $customerName = '';
+    public array $items = [];
+    public ?Address $deliveryAddress = null;
 }
 ```
 
-### Validating DTOs
-Once your validation rules are registered, you can validate DTO instances anywhere in your application:
-```php
-<?php
-    $dto = DtoMapper::toFreightDto($args);
-    $errors = ValidationHandler::validate($dto);
-    $flattenedErrors = ValidationHandler::flattenValidationErrors($errors);
-    
-    if(count($errors) > 0) 
-        return;
-```
+Fynix can validate all of the following together:
+
+- required customer name
+- valid email and phone data
+- minimum and maximum array sizes
+- nested address validation
+- per-item validation in `items[]`
+
+That is exactly where Fynix is most valuable.
+
+---
+
+## When to use Fynix
+
+Use Fynix when you need:
+
+- validation that matches domain model structure
+- reusable validation logic across APIs and forms
+- nested and object-based validation without framework coupling
+- consistent, structured validation errors
+
+It is a strong choice for PHP applications that care about correctness, maintainability, and clear validation boundaries.
+
+---
+
+## Next steps
+
+- Read the [reference overview](/reference/overview)
+- Explore the [built-in validators](/reference/validators)
+- Learn the [rules and registry pattern](/reference/rules-and-registry)
+- See how [ValidationHandler and errors](/reference/validation-handler) work in practice
+- Review [advanced patterns](/reference/advanced-patterns) for complex DTO graphs
+
+Fynix is intentionally compact, but its rules and orchestration layer scale well from small forms to large domain-driven applications.
