@@ -6,8 +6,8 @@ import starlight from '@astrojs/starlight';
 export default defineConfig({
 	integrations: [
 		starlight({
-			title: 'Fynix PHP',
-			description: 'A modern, framework-agnostic PHP validation engine for DTOs, files, and nested object graphs.',
+			title: 'Fynix PHP v3',
+			description: 'Fynix PHP v3 is a framework-agnostic validation engine with fluent rules, structured errors, DTO validation, and nested object support.',
 			social: [
 				{ icon: 'github', label: 'GitHub', href: 'https://github.com/shrestha-bishal/fynix' },
 				{ icon: 'seti:php', label: 'Packagist', href: 'https://packagist.org/packages/bishalshrestha/fynix' },
