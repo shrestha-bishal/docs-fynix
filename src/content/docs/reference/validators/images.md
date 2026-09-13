@@ -16,8 +16,8 @@ Rule::images(string $field): ImagesValidator
 
 | Method | Description |
 | --- | --- |
-| `min(int|float $value)` | Set the minimum number of images. |
-| `max(int|float $value)` | Set the maximum number of images. |
+| `min(int\|float $value)` | Set the minimum number of images. |
+| `max(int\|float $value)` | Set the maximum number of images. |
 | `maxFileSizeMB(int $megabytes)` | Set the per-file size limit. |
 | `validate(mixed $value)` | Validate the upload collection. |
 | `required(bool $required = true)` | Require at least one upload. |

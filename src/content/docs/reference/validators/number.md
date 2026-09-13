@@ -16,8 +16,8 @@ Rule::number(string $field): NumberValidator
 
 | Method | Description |
 | --- | --- |
-| `min(int|float $value)` | Set the inclusive lower bound. |
-| `max(int|float $value)` | Set the inclusive upper bound. |
+| `min(int\|float $value)` | Set the inclusive lower bound. |
+| `max(int\|float $value)` | Set the inclusive upper bound. |
 | `length(int $min, int $max)` | Configure inherited length limits when needed. |
 | `required(bool $required = true)` | Mark the field as required. |
 | `optional()` | Allow a missing value. |

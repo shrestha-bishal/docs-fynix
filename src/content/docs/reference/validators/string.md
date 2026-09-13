@@ -18,8 +18,8 @@ The name is used in messages. The property name is the key used in the DTO and r
 
 | Method | Description |
 | --- | --- |
-| `min(int|float $value)` | Set the minimum string length. |
-| `max(int|float $value)` | Set the maximum string length. |
+| `min(int\|float $value)` | Set the minimum string length. |
+| `max(int\|float $value)` | Set the maximum string length. |
 | `length(int $min, int $max)` | Set both length limits. |
 | `required(bool $required = true)` | Mark the field as required. |
 | `optional()` | Allow `null` or an empty value. |

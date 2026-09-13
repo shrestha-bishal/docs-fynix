@@ -88,6 +88,10 @@ export default defineConfig({
 					label: 'Examples',
 					items: [
 						{ label: 'Examples overview', slug: 'examples' },
+						{ label: 'Standalone values', slug: 'examples/standalone' },
+						{ label: 'Array and collection validation', slug: 'examples/arrays' },
+						{ label: 'Object and DTO validation', slug: 'examples/objects' },
+						{ label: 'File and image validation', slug: 'examples/uploads' },
 						{ label: 'Registration workflow', slug: 'examples/registration' },
 						{ label: 'Nested order validation', slug: 'examples/nested-order' },
 						{ label: 'Field and API errors', slug: 'examples/field-errors' },

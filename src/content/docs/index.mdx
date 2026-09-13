@@ -1,32 +1,38 @@
 ---
-title: Fynix - The Modern PHP Validation Engine
-description: Fynix is a modern, extensible PHP validation library for primitives, DTOs, nested objects, files, and structured payloads.
+title: Fynix - Fluent validation for modern PHP
+description: Fynix is a fluent, extensible PHP validation library for primitives, DTOs, nested objects, files, and structured payloads.
 template: splash
 hero:
-  tagline: Elegant Validation for Modern PHP
+  tagline: Fluent rules. Structured errors. Modern PHP.
   image:
     file: ../../assets/icon.png
   actions:
-    - text: Get Started
+    - text: Start with v3
       link: introduction
-    - text: Browse Validators
-      link: /reference/validators
+    - text: Explore the public API
+      link: /reference/overview
       variant: minimal
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
-Fynix is a **fast, flexible, and extensible PHP validation engine** built for applications that need to validate primitives, files, DTOs, nested object graphs, and arrays without sacrificing clarity or type safety.
+Fynix is a **framework-agnostic PHP validation engine** for rules that stay readable as your application grows. Build a rule with the `Rule` facade, compose it with fluent constraints, and return the same structured errors from a field, DTO, or nested object graph.
 
-## Why teams choose Fynix
+## Validation that reads like policy
 
-- immutable, chainable rules for predictable validation logic
-- validator families for strings, numbers, files, uploads, enums, and objects
-- nested object and object-array validation through `ValidationRegistry`
-- structured `ValidationError` payloads for JSON APIs, plus flattened strings for forms
-- zero public constructor-based validation API in v3
+```php
+use Fynix\Rule;
 
-## Core workflow
+$email = Rule::email('email')
+  ->required()
+  ->max(180);
+
+$error = $email->validate('not-an-email');
+```
+
+Rules are immutable, chainable, and built through the public facade. Use the same fluent language for a one-off value or a complete DTO.
+
+## One API, every boundary
 
 ```php
 use Fynix\RuleSet;
@@ -47,22 +53,28 @@ ValidationRegistry::register(
     ]
 );
 
-$errors = ValidationHandler::validate(new User());
+$user = new User();
+$user->firstName = 'A';
+$user->email = 'not-an-email';
+
+$errors = ValidationHandler::validate($user);
 ```
 
-## Start here
+The handler preserves nested error structure for APIs and can return string messages for forms. No framework adapter is required.
+
+## Find your path
 
 <CardGrid stagger>
-	<Card title="Get Started" icon="rocket">
-		Follow the [introduction guide](introduction) to install Fynix and validate your DTOs.
+  <Card title="Build your first rule" icon="rocket">
+    Install Fynix and learn the v3 workflow in the [introduction guide](introduction).
 	</Card>
-	<Card title="Rule & Registry API" icon="document">
-		See how to define reusable v3 rules with [Rule, RuleSet, and registry](/reference/rules-and-registry).
+  <Card title="Use the public API" icon="document">
+    Learn `Rule`, `RuleSet`, the fluent API, and object validation in the [public API reference](/reference/overview).
 	</Card>
-	<Card title="Built-in Validators" icon="list">
-		Explore the full validator matrix in the [validator overview](/reference/validators).
+  <Card title="Choose a validator" icon="magnifier">
+    Find practical examples for every validator in the [validator examples](/examples/validators).
 	</Card>
-	<Card title="Advanced Patterns" icon="puzzle">
-		Learn nested DTOs, arrays, listeners, and conditional validation in [advanced patterns](/reference/advanced-patterns).
+  <Card title="Copy a recipe" icon="puzzle">
+    Start from a complete scenario in the [validation recipes](/examples/recipes), from conditional fields to nested DTOs.
 	</Card>
 </CardGrid>
