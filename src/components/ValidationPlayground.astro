@@ -1,0 +1,304 @@
+<div class="playground">
+  <div class="playground__intro">
+    <div>
+      <p class="eyebrow">Browser playground</p>
+      <h2>Build a rule chain</h2>
+      <p>Choose a recipe, edit the PHP, and inspect the validation result below.</p>
+    </div>
+    <span class="status" data-status>Ready</span>
+  </div>
+
+  <div class="editor" data-editor-shell>
+    <div class="editor__toolbar">
+      <label class="template-picker">
+        Example
+        <select data-template>
+          <option value="registration">Registration rules</option>
+          <option value="nested">Nested object rule</option>
+          <option value="field">Standalone field rule</option>
+        </select>
+      </label>
+      <span class="editor__hint"><kbd>Ctrl</kbd><span>+</span><kbd>Space</kbd> autocomplete</span>
+    </div>
+    <div class="editor__surface" data-editor aria-label="PHP rule editor"></div>
+    <div class="editor__footer">
+      <span><strong>Fynix v3</strong> fluent API</span>
+      <span>PHP example editor</span>
+    </div>
+  </div>
+
+  <form class="playground__form" data-form>
+    <label>
+      Account type
+      <select name="accountType">
+        <option value="personal">Personal</option>
+        <option value="business" selected>Business</option>
+      </select>
+    </label>
+    <label>
+      Email
+      <input name="email" type="email" value="not-an-email" />
+    </label>
+    <label>
+      Password
+      <input name="password" type="password" autocomplete="current-password" value="short" />
+    </label>
+    <label>
+      Company name
+      <input name="companyName" type="text" value="" />
+    </label>
+    <label>
+      Address city
+      <input name="city" type="text" value="A" />
+    </label>
+    <button type="submit">Validate input</button>
+  </form>
+
+  <div class="playground__result">
+    <div class="result-heading">
+      <span>Returned result</span>
+      <button class="copy" type="button" data-copy>Copy JSON</button>
+    </div>
+    <pre><code data-output></code></pre>
+  </div>
+</div>
+
+<script>
+  import { acceptCompletion, autocompletion, closeBrackets, completionKeymap } from '@codemirror/autocomplete';
+  import { defaultKeymap, indentWithTab } from '@codemirror/commands';
+  import { php } from '@codemirror/lang-php';
+  import { EditorState } from '@codemirror/state';
+  import { EditorView, drawSelection, highlightActiveLine, highlightActiveLineGutter, keymap, lineNumbers } from '@codemirror/view';
+
+  const forms = document.querySelectorAll('[data-form]');
+  const templates = {
+    registration: `$rules->email('email')->max(254);
+$rules->password('password')->length(12, 128);
+$rules->string('companyName')
+    ->optional()
+    ->requiredIf('accountType', 'business');`,
+    nested: `$rules->objectArray('items', LineItem::class)
+    ->min(1)
+    ->max(100);`,
+    field: `Rule::string('displayName')
+    ->min(2)
+    ->max(80)
+    ->validate('A');`,
+  };
+  const fluentMethods = [
+    ['required()', 'Require the value.', 'presence', 'required(bool $required = true)'],
+    ['optional()', 'Allow null or an empty value.', 'presence', 'optional()'],
+    ['min()', 'Set a minimum length, value, or item count.', 'constraint', 'min(int $value)'],
+    ['max()', 'Set a maximum length, value, or item count.', 'constraint', 'max(int $value)'],
+    ['length()', 'Set minimum and maximum length.', 'constraint', 'length(int $min, int $max)'],
+    ['in()', 'Allow only selected values.', 'constraint', 'in(array $values)'],
+    ['notIn()', 'Reject selected values.', 'constraint', 'notIn(array $values)'],
+    ['sameAs()', 'Match another object field.', 'conditional', 'sameAs(string $field)'],
+    ['differentFrom()', 'Reject matching field values.', 'conditional', 'differentFrom(string $field)'],
+    ['requiredIf()', 'Require when another field matches.', 'conditional', 'requiredIf(string $field, mixed $value)'],
+    ['requiredUnless()', 'Require when another field differs.', 'conditional', 'requiredUnless(string $field, mixed $value)'],
+    ['prohibitedIf()', 'Reject when another field matches.', 'conditional', 'prohibitedIf(string $field, mixed $value)'],
+    ['prohibitedUnless()', 'Reject when another field differs.', 'conditional', 'prohibitedUnless(string $field, mixed $value)'],
+    ['validate()', 'Return the first error.', 'execution', 'validate(mixed $value = null)'],
+    ['validateAll()', 'Return every applicable error.', 'execution', 'validateAll(mixed $value = null)'],
+  ];
+  const validatorFactories = [
+    ['string()', 'Create a string validator.', 'validator', 'string(string $field)'],
+    ['boolean()', 'Create a strict boolean validator.', 'validator', 'boolean(string $field)'],
+    ['number()', 'Create a numeric validator.', 'validator', 'number(string $field)'],
+    ['integer()', 'Create an integer validator.', 'validator', 'integer(string $field)'],
+    ['decimal()', 'Create a decimal validator.', 'validator', 'decimal(string $field)'],
+    ['email()', 'Create an email validator.', 'validator', 'email(string $field)'],
+    ['phoneNumber()', 'Create a phone number validator.', 'validator', 'phoneNumber(string $field)'],
+    ['password()', 'Create a password validator.', 'validator', 'password(string $field)'],
+    ['dateTime()', 'Create a date-time validator.', 'validator', 'dateTime(string $field)'],
+    ['url()', 'Create a URL validator.', 'validator', 'url(string $field)'],
+    ['uuid()', 'Create a UUID validator.', 'validator', 'uuid(string $field)'],
+    ['ipAddress()', 'Create an IP address validator.', 'validator', 'ipAddress(string $field)'],
+    ['regex()', 'Create a regular-expression validator.', 'validator', 'regex(string $field, string $pattern)'],
+    ['array()', 'Create an array validator.', 'validator', 'array(string $field)'],
+    ['arrayOf()', 'Create an array validator.', 'validator', 'arrayOf(string $field)'],
+    ['enum()', 'Create an enum validator.', 'validator', 'enum(string $field, string $enumClass)'],
+    ['file()', 'Create a file validator.', 'validator', 'file(string $field)'],
+    ['image()', 'Create an image validator.', 'validator', 'image(string $field)'],
+    ['images()', 'Create a multiple-image validator.', 'validator', 'images(string $field)'],
+    ['object()', 'Create a nested object validator.', 'validator', 'object(string $field, string $targetClass)'],
+    ['objectArray()', 'Create an object-array validator.', 'validator', 'objectArray(string $field, string $targetClass)'],
+    ['username()', 'Create a username validator.', 'validator', 'username(string $field)'],
+  ];
+
+  const fynixCompletion = (context) => {
+    const factoryMatch = context.matchBefore(/(?:\$rules->|Rule::)[A-Za-z]*$/);
+    const fluentMatch = context.matchBefore(/->[A-Za-z]*$/);
+    const match = factoryMatch ?? fluentMatch;
+    if (!match && !context.explicit) return null;
+    const factoryPrefix = factoryMatch?.text.startsWith('$rules->') ? '$rules->'.length : 'Rule::'.length;
+    const prefixLength = factoryMatch ? factoryPrefix : 2;
+    const methods = factoryMatch ? validatorFactories : fluentMethods;
+    const typed = match?.text.slice(prefixLength).toLowerCase() ?? '';
+    const options = methods
+      .filter(([method]) => method.toLowerCase().startsWith(typed))
+      .map(([label, description, category, signature]) => ({
+        label,
+        detail: signature,
+        info: description,
+        type: category === 'execution' ? 'keyword' : category === 'validator' || category === 'conditional' ? 'function' : 'method',
+        apply: ['required()', 'optional()'].includes(label) ? label : `${label.slice(0, -2)}(`,
+      }));
+    return {
+      from: match ? match.from + prefixLength : context.pos,
+      options,
+      validFor: /^[A-Za-z]*$/,
+    };
+  };
+
+  const editorTheme = EditorView.theme({
+    '&': { backgroundColor: '#ffffff', color: '#1f2933', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace', fontSize: '0.86rem', lineHeight: '1.6' },
+    '.cm-content': { minHeight: '11rem', padding: '0.9rem 0', lineHeight: '1.6' },
+    '.cm-line': { padding: '0', lineHeight: '1.6' },
+    '.cm-cursor': { borderLeft: '2px solid #0284c7' },
+    '.cm-dropCursor': { borderLeft: '2px solid #0284c7' },
+    '.cm-gutters': { backgroundColor: '#f8fafc', color: '#94a3b8', border: 'none', borderRight: '1px solid #e2e8f0' },
+    '.cm-activeLine, .cm-activeLineGutter': { backgroundColor: '#f1f5f9' },
+    '.cm-selectionBackground, ::selection': { backgroundColor: '#bfdbfe' },
+    '.cm-tooltip': { backgroundColor: '#ffffff', border: '1px solid #cbd5e1', boxShadow: '0 12px 28px rgb(15 23 42 / 14%)', color: '#1f2933' },
+    '.cm-tooltip-autocomplete ul li': { padding: '0.45rem 0.65rem' },
+    '.cm-tooltip-autocomplete ul li[aria-selected]': { backgroundColor: '#e0f2fe', color: '#0c4a6e' },
+    '.cm-completionDetail': { color: '#64748b', fontStyle: 'normal', marginLeft: '0.8rem' },
+    '.cm-completionInfo': { backgroundColor: '#f8fafc', borderLeft: '1px solid #e2e8f0', color: '#475569', padding: '0.65rem' },
+    '.cm-completionIcon': { color: '#0284c7' },
+  });
+
+  document.querySelectorAll('[data-editor-shell]').forEach((shell) => {
+    const editorElement = shell.querySelector('[data-editor]');
+    const template = shell.querySelector('[data-template]');
+    let view;
+
+    const loadTemplate = () => {
+      if (!view) return;
+      view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: templates[template.value] },
+        selection: { anchor: templates[template.value].length },
+      });
+    };
+
+    view = new EditorView({
+      state: EditorState.create({
+        doc: templates[template.value],
+        extensions: [
+          lineNumbers(),
+          drawSelection(),
+          highlightActiveLine(),
+          highlightActiveLineGutter(),
+          closeBrackets(),
+          keymap.of([{ key: 'Enter', run: acceptCompletion }, ...completionKeymap, ...defaultKeymap, indentWithTab]),
+          php(),
+          editorTheme,
+          EditorView.domEventHandlers({
+            keydown(event, currentView) {
+              if (event.key === 'Enter' && acceptCompletion(currentView)) {
+                event.preventDefault();
+                return true;
+              }
+
+              return false;
+            },
+          }),
+          autocompletion({
+            override: [fynixCompletion],
+            activateOnTyping: true,
+            maxRenderedOptions: 20,
+            defaultKeymap: true,
+          }),
+        ],
+      }),
+      parent: editorElement,
+    });
+
+    template.addEventListener('change', loadTemplate);
+  });
+
+  forms.forEach((form) => {
+    const output = form.closest('.playground').querySelector('[data-output]');
+    const status = form.closest('.playground').querySelector('[data-status]');
+    const copy = form.closest('.playground').querySelector('[data-copy]');
+
+    const validate = () => {
+      const values = Object.fromEntries(new FormData(form).entries());
+      const errors = {};
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+        errors.email = 'Email must be a valid email address.';
+      }
+      if (values.password.length < 12) {
+        errors.password = 'Password is too short. This field must be at least 12 characters.';
+      }
+      if (values.accountType === 'business' && values.companyName.trim() === '') {
+        errors.companyName = 'Company Name is required.';
+      }
+      if (values.city.trim().length < 2) {
+        errors.address = { city: 'City is too short. This field must be at least 2 characters.' };
+      }
+
+      const result = JSON.stringify(errors, null, 2);
+      output.textContent = result;
+      status.textContent = Object.keys(errors).length === 0 ? 'Valid' : `${Object.keys(errors).length} issue${Object.keys(errors).length === 1 ? '' : 's'}`;
+      status.dataset.valid = Object.keys(errors).length === 0 ? 'true' : 'false';
+      return result;
+    };
+
+    form.addEventListener('input', validate);
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      validate();
+    });
+    copy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(output.textContent);
+      } catch {
+        const fallback = document.createElement('textarea');
+        fallback.value = output.textContent;
+        fallback.setAttribute('readonly', '');
+        fallback.style.position = 'fixed';
+        fallback.style.opacity = '0';
+        document.body.append(fallback);
+        fallback.select();
+        document.execCommand('copy');
+        fallback.remove();
+      }
+
+      copy.textContent = 'Copied';
+      window.setTimeout(() => { copy.textContent = 'Copy JSON'; }, 1200);
+    });
+    validate();
+  });
+</script>
+
+<style>
+  .playground { border: 1px solid var(--sl-color-gray-5); border-radius: 8px; overflow: hidden; background: var(--sl-color-bg-nav); }
+  .playground__intro { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1.25rem; border-bottom: 1px solid var(--sl-color-gray-5); }
+  .playground__intro h2 { margin: 0.15rem 0 0.35rem; font-size: 1.25rem; }
+  .playground__intro p:last-child { margin: 0; color: var(--sl-color-gray-2); }
+  .eyebrow { margin: 0; color: var(--sl-color-accent-high); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+  .status { border: 1px solid var(--sl-color-red); border-radius: 999px; padding: 0.25rem 0.65rem; color: var(--sl-color-red-high); font-size: 0.8rem; white-space: nowrap; }
+  .status[data-valid='true'] { border-color: var(--sl-color-green); color: var(--sl-color-green-high); }
+  .editor { border-bottom: 1px solid var(--sl-color-gray-5); padding: 1.25rem; }
+  .editor__toolbar { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 0.65rem; }
+  .template-picker { max-width: 18rem; }
+  .editor__hint { align-items: center; color: var(--sl-color-gray-3); display: flex; gap: 0.35rem; font-size: 0.8rem; }
+  kbd { border: 1px solid var(--sl-color-gray-5); border-bottom-width: 2px; border-radius: 4px; color: var(--sl-color-gray-1); padding: 0.1rem 0.3rem; font-size: 0.7rem; }
+  .editor__surface { overflow: hidden; border: 1px solid #cbd5e1; border-radius: 6px; background: #ffffff; }
+  .editor__surface .cm-editor { min-height: 12rem; }
+  .editor__footer { display: flex; justify-content: space-between; gap: 1rem; color: var(--sl-color-gray-3); padding-top: 0.55rem; font-size: 0.75rem; }
+  .editor__footer strong { color: var(--sl-color-accent-high); font-weight: 650; }
+  .playground__form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; padding: 1.25rem; }
+  label { display: grid; gap: 0.4rem; color: var(--sl-color-gray-1); font-size: 0.9rem; font-weight: 650; }
+  input, select { width: 100%; border: 1px solid var(--sl-color-gray-5); border-radius: 5px; background: var(--sl-color-bg); color: var(--sl-color-white); padding: 0.65rem 0.75rem; font: inherit; }
+  button { border: 0; border-radius: 5px; background: var(--sl-color-accent); color: var(--sl-color-black); padding: 0.65rem 0.9rem; font: inherit; font-weight: 700; cursor: pointer; }
+  .playground__form button { grid-column: 1 / -1; justify-self: start; }
+  .playground__result { padding: 0 1.25rem 1.25rem; }
+  .result-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.5rem; color: var(--sl-color-gray-1); font-size: 0.9rem; font-weight: 700; }
+  .copy { background: transparent; border: 1px solid var(--sl-color-gray-5); color: var(--sl-color-gray-1); font-size: 0.8rem; }
+  pre { min-height: 9rem; margin: 0; }
+  @media (max-width: 640px) { .editor__toolbar { align-items: stretch; flex-direction: column; } .playground__form { grid-template-columns: 1fr; } .playground__form button { grid-column: auto; } }
+</style>

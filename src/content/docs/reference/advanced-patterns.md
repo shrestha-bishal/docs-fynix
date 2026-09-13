@@ -3,7 +3,6 @@ title: Advanced patterns
 description: Use nested DTOs, arrays, conditional constraints, listeners, and batch validation in Fynix v3.
 ---
 
-# Advanced patterns
 
 ## Arrays of DTOs
 
@@ -76,6 +75,29 @@ $status = Rule::string('status')
     ->in(['draft', 'published'])
     ->notIn(['archived']);
 ```
+
+## Custom validators
+
+Extend `ValidatorBase` when a rule belongs to your domain rather than to a generic type. Return `ValidationError` with `$this` and build the message from `$this->name`; this keeps the custom error connected to the validator metadata and respects labels applied by the rule.
+
+```php
+use Fynix\ValidationError;
+use Fynix\Validators\ValidatorBase;
+
+final class EvenNumberValidator extends ValidatorBase
+{
+    protected function validateValue(mixed $fieldValue): ?ValidationError
+    {
+        if (!is_int($fieldValue) || $fieldValue % 2 !== 0) {
+            return new ValidationError($this, "$this->name must be even.", 'number.even');
+        }
+
+        return null;
+    }
+}
+```
+
+The shared base pipeline runs before the custom type check, so requiredness and common fluent constraints remain available to the custom validator.
 
 ## Batch validation
 

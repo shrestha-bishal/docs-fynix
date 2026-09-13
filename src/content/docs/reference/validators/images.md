@@ -3,7 +3,6 @@ title: ImagesValidator
 description: Validate a collection of uploaded images with count and file-size limits.
 ---
 
-# ImagesValidator
 
 Use `ImagesValidator` for galleries, attachments, or any field containing multiple uploaded images.
 
@@ -34,7 +33,7 @@ $validator = Rule::images('gallery')
     ->max(8)
     ->maxFileSizeMB(5);
 
-$errors = $validator->validateFieldAll($_FILES['gallery'] ?? null);
+$errors = $validator->validateAll($_FILES['gallery'] ?? null);
 ```
 
 Each image is checked using the same content and upload checks as `ImageValidator`. Count limits must be non-negative integers.

@@ -1,0 +1,42 @@
+---
+id: playground
+title: Interactive playground
+description: Experiment with Fynix examples, fluent rules, and returned validation results in the browser.
+---
+
+import ValidationPlayground from '../../components/ValidationPlayground.astro';
+
+
+Choose an example, edit the sample input, and explore the PHP rule chain in the editor. The editor suggests validator factories after `$rules->` or `Rule::`, then offers fluent constraints after a validator chain such as `->min()` or `->requiredIf()`. The result panel runs the registration sample shown on this page and mirrors its nested output shape.
+
+<ValidationPlayground />
+
+## What the playground represents
+
+The browser playground mirrors real Fynix rules such as:
+
+```php
+$rules->email('email')->max(254);
+$rules->password('password')->length(12, 128);
+$rules->string('companyName')
+    ->optional()
+    ->requiredIf('accountType', 'business');
+```
+
+The editor is an interactive documentation aid with autocomplete, not a PHP runtime, so changing its text does not change the sample validation rules. Your application still executes the PHP rules on the server, and `ValidationHandler::validate()` remains the source of truth.
+
+## Try a valid payload
+
+Use these values in the form:
+
+- account type: `personal`
+- email: `person@example.com`
+- password: `A-secure-password-123`
+- company name: leave empty
+- city: `London`
+
+The returned result becomes:
+
+```json
+{}
+```

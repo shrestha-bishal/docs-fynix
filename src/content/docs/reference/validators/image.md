@@ -3,7 +3,6 @@ title: ImageValidator
 description: Validate a single uploaded image, including its content and file size.
 ---
 
-# ImageValidator
 
 Use `ImageValidator` for a single PHP upload such as a profile or cover image.
 
@@ -35,7 +34,7 @@ use Fynix\Rule;
 $validator = Rule::image('profileImage')
     ->maxFileSizeMB(5);
 
-$error = $validator->validateField($_FILES['profileImage'] ?? null);
+$error = $validator->validate($_FILES['profileImage'] ?? null);
 ```
 
 Fynix checks the upload error, temporary path, size, extension, and actual image content. The default size limit is 5 MB.

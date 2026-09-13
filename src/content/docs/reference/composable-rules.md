@@ -3,7 +3,6 @@ title: Composable rules
 description: Combine Fynix rules with AllOf, AnyOf, and Not for reusable business constraints.
 ---
 
-# Composable rules
 
 Fynix v3 includes `AllOf`, `AnyOf`, and `Not` for combining `Validatable` rules. These are useful when a field can satisfy multiple formats or when a value must not satisfy a rule.
 

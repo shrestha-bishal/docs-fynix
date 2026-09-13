@@ -3,7 +3,6 @@ title: ObjectArrayValidator
 description: Validate arrays of nested DTOs with collection size limits.
 ---
 
-# ObjectArrayValidator
 
 Use `ObjectArrayValidator` for line items, addresses, attachments, and other collections of typed objects.
 

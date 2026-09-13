@@ -3,7 +3,6 @@ title: Reference overview
 description: Understand the v3 building blocks of the Fynix validation engine.
 ---
 
-# Reference overview
 
 Fynix v3 separates rule construction from validation. Use `Rule` for standalone fields, `Rule::on()` or `RuleSet` for DTO-owned fields, and `ValidationHandler` when validating a complete object graph.
 
@@ -24,7 +23,7 @@ $standalone = Rule::string('firstName')->min(2)->max(50);
 $scoped = Rule::on(User::class)->email('email')->max(255);
 ```
 
-`Rule::on()` checks that the owner class and property exist. Direct validator constructors and the removed `Rules::for()` builder are not part of v3's public API.
+`Rule::on()` checks that the owner class and property exist. Use the facade APIs above for all rule construction.
 
 ## Registry API
 

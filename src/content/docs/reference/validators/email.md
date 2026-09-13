@@ -3,7 +3,6 @@ title: EmailValidator
 description: Validate email syntax and optionally verify that the domain can receive mail.
 ---
 
-# EmailValidator
 
 Use `EmailValidator` for account, contact, and notification addresses.
 
@@ -21,8 +20,8 @@ Rule::email(string $field): EmailValidator
 | `verifyDomain(bool $enabled = true)` | Enable MX-record verification. |
 | `required(bool $required = true)` | Mark the field as required. |
 | `optional()` | Allow a missing email. |
-| `validateField(mixed $value)` | Return the first error or `null`. |
-| `validateFieldAll(mixed $value)` | Return every applicable error. |
+| `validate(mixed $value)` | Return the first error or `null`. |
+| `validateAll(mixed $value)` | Return every applicable error. |
 
 ## Example
 
@@ -33,7 +32,7 @@ $validator = Rule::email('email')
     ->length(6, 180)
     ->verifyDomain();
 
-$error = $validator->validateField('person@example.com');
+$error = $validator->validate('person@example.com');
 ```
 
 Syntax checks are always enabled. Domain verification is opt-in because DNS lookups add network cost and can make validation less deterministic.
