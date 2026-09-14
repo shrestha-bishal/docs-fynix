@@ -30,3 +30,12 @@ $error = Rule::for($profile)
 ```
 
 Use object-bound or handler validation so the related field can be read from the same object.
+
+The closure form receives the object and returns the value that must differ from
+the current field:
+
+```php
+$rule = Rule::for($profile)
+    ->string('newUsername')
+    ->differentFrom(static fn (Profile $profile): string => $profile->currentUsername);
+```

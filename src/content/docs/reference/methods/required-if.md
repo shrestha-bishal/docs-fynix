@@ -26,3 +26,18 @@ $error = Rule::for($user)
 ```
 
 If `accountType` is not `business`, an empty `companyName` is allowed because the rule is also marked `optional()`.
+
+For conditions based on multiple fields, pass a closure instead. It receives the
+object currently being validated:
+
+```php
+$rule = Rule::for($order)
+    ->string('internationalCode')
+    ->optional()
+    ->requiredIf(static fn (Order $order): bool =>
+        $order->shippingMethod === 'business' && $order->isInternational
+    );
+```
+
+The closure form is also available on `requiredUnless()`, `prohibitedIf()`, and
+`prohibitedUnless()`.

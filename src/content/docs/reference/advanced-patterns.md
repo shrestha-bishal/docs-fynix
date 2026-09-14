@@ -66,6 +66,53 @@ ValidationRegistry::register(
 
 Available conditional methods are `requiredIf()`, `requiredUnless()`, `prohibitedIf()`, and `prohibitedUnless()`. Related-field methods are `sameAs()` and `differentFrom()`.
 
+### Closure conditions
+
+Conditional methods accept a closure that receives the object currently being
+validated. This is useful when a condition depends on more than one field:
+
+```php
+$rules->string('internationalCode')
+    ->optional()
+    ->requiredIf(
+        static fn (Order $order): bool =>
+            $order->shippingMethod === 'business' && $order->isInternational,
+    );
+```
+
+Use `when()` to skip the entire validator unless the object satisfies a
+predicate. It can gate type, length, requiredness, and other configuration:
+
+```php
+$rules->string('companyName')
+    ->min(10)
+    ->when(static fn (Order $order): bool => $order->shippingMethod === 'business');
+```
+
+Closures are also supported by `requiredUnless()`, `prohibitedIf()`,
+`prohibitedUnless()`, `sameAs()`, and `differentFrom()`. Predicates run during
+validation and receive the validated object, not the `RuleSet` factory.
+
+## DTO property visibility
+
+Registered validation can read declared public, protected, and private
+properties. Property names are checked when rules are created; getters and
+magic properties are not invoked automatically.
+
+```php
+final class Account
+{
+    private string $email = '';
+}
+
+ValidationRegistry::register(
+    Account::class,
+    static fn (RuleSet $rules): array => [
+        $rules->email('email'),
+    ],
+);
+```
+
 ## Reusable value constraints
 
 ```php

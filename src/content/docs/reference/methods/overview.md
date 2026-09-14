@@ -63,9 +63,15 @@ Use `ValidationHandler::validate()` when running several rules against a complet
 | Bounds | `min()`, `max()`, `length()` | Length, numeric, or collection limits |
 | Value sets | `in()`, `notIn()` | Allow-lists and deny-lists |
 | Cross-field | `sameAs()`, `differentFrom()` | Comparing fields on one object |
-| Conditional presence | `requiredIf()`, `requiredUnless()` | Requiring fields based on another field |
-| Conditional prohibition | `prohibitedIf()`, `prohibitedUnless()` | Rejecting fields in a context |
+| Conditional presence | `requiredIf()`, `requiredUnless()` | Requiring fields based on another field or closure |
+| Conditional prohibition | `prohibitedIf()`, `prohibitedUnless()` | Rejecting fields based on a field or closure |
+| Conditional execution | `when()` | Running a complete validator only when a closure matches |
 | Pipeline controls | `genericValidation()`, `withoutGenericValidation()` | Shared validation behavior |
 | Execution | `validate()`, `validateAll()` | Running one rule |
 
 Every method is documented in detail in this section. See [Rules, RuleSet, and registry](../rules-and-registry) for construction and registration, or begin with [label()](./label).
+
+Conditional methods accept either a field/value pair or a closure receiving the
+object being validated. `sameAs()` and `differentFrom()` accept closures that
+return the comparison value. Use [`when()`](./when) to conditionally skip the
+entire validator pipeline.

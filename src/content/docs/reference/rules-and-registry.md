@@ -47,6 +47,25 @@ This keeps validation rules explicit, type-safe, and easy to reuse.
 
 `Rule::on()` expects a class name such as `User::class`. Use `Rule::for($user)` when the rules should read values from one object instance.
 
+## v2 compatibility builder
+
+Existing v2-style definitions can use `Rules::for()` and `RuleBuilder` while
+moving to the v3 APIs:
+
+```php
+use Fynix\Rules;
+
+$rules = Rules::for(Order::class)
+    ->string('shippingMethod')
+    ->required()
+    ->rules();
+
+$errors = ValidationHandler::validate($order, rules: $rules);
+```
+
+The builder preserves the fluent registration style and supports v3 methods
+such as `when()`. Prefer `RuleSet` for new registry factories.
+
 ## Standalone rules
 
 Use standalone rules when you are validating a value directly, not a registered object:
@@ -133,11 +152,12 @@ Keep rule construction on the v3 facade APIs so definitions remain immutable and
 | `label(string $label)` | Override the generated field label. |
 | `required()` / `optional()` | Control missing-value behavior. |
 | `in(array $values)` / `notIn(array $values)` | Allow or reject exact values. |
-| `sameAs(string $field)` / `differentFrom(string $field)` | Compare fields in the same object. |
-| `requiredIf(string $field, mixed $value)` | Require a field when another field matches. |
-| `requiredUnless(string $field, mixed $value)` | Require a field when another field does not match. |
-| `prohibitedIf(string $field, mixed $value)` | Reject a value when another field matches. |
-| `prohibitedUnless(string $field, mixed $value)` | Reject a value when another field does not match. |
+| `sameAs(string|Closure $fieldOrCondition)` / `differentFrom(string|Closure $fieldOrCondition)` | Compare fields or closure-derived values in the same object. |
+| `requiredIf(string|Closure $fieldOrCondition, mixed $value = null)` | Require a field when another field/value or closure condition matches. |
+| `requiredUnless(string|Closure $fieldOrCondition, mixed $value = null)` | Require a field when another field/value or closure condition does not match. |
+| `prohibitedIf(string|Closure $fieldOrCondition, mixed $value = null)` | Reject a value when another field/value or closure condition matches. |
+| `prohibitedUnless(string|Closure $fieldOrCondition, mixed $value = null)` | Reject a value when another field/value or closure condition does not match. |
+| `when(Closure $condition)` | Run the validator only when the owning object satisfies a condition. |
 | `genericValidation(bool $enabled = true)` / `withoutGenericValidation()` | Enable or disable shared requiredness, normalization, HTML, and length checks. |
 | `validate(mixed $value, ?object $data = null)` | Return the first applicable validation error. |
 | `validateAll(mixed $value, ?object $data = null)` | Return all applicable validation errors. |

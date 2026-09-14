@@ -45,6 +45,7 @@ export default defineConfig({
 								{ label: 'requiredUnless()', slug: 'reference/methods/required-unless' },
 								{ label: 'prohibitedIf()', slug: 'reference/methods/prohibited-if' },
 								{ label: 'prohibitedUnless()', slug: 'reference/methods/prohibited-unless' },
+								{ label: 'when()', slug: 'reference/methods/when' },
 								{ label: 'genericValidation()', slug: 'reference/methods/generic-validation' },
 								{ label: 'withoutGenericValidation()', slug: 'reference/methods/without-generic-validation' },
 								{ label: 'validate()', slug: 'reference/methods/validate' },

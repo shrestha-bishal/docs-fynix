@@ -26,6 +26,46 @@ composer require bishalshrestha/fynix
 
 Fynix requires PHP 8.1 or newer.
 
+## What's new in v3.1
+
+Fynix v3.1 adds closure-based conditions, a `when()` method for conditional
+validators, and a compatibility builder for v2 rule definitions. Registered
+rules can also read declared public, protected, and private DTO properties.
+
+Use `when()` when the whole rule should run only for a matching object:
+
+```php
+$companyName = Rule::for($order)
+    ->string('companyName')
+    ->min(10)
+    ->when(static fn (Order $order): bool => $order->shippingMethod === 'business');
+```
+
+Conditional methods also accept a closure that receives the object being
+validated:
+
+```php
+$internationalCode = Rule::on(Order::class)
+    ->string('internationalCode')
+    ->optional()
+    ->requiredIf(
+        static fn (Order $order): bool =>
+            $order->shippingMethod === 'business' && $order->isInternational,
+    );
+```
+
+For existing v2 definitions, `Rules::for()` and `RuleBuilder` remain available
+as a compatibility layer. New definitions should use `RuleSet`:
+
+```php
+use Fynix\Rules;
+
+$rules = Rules::for(Order::class)
+    ->string('shippingMethod')
+    ->required()
+    ->rules();
+```
+
 ## The v3 workflow
 
 Fynix v3 has three primary layers:

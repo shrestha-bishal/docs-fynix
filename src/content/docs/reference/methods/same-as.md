@@ -31,3 +31,12 @@ $error = Rule::for($user)
 ```
 
 Use `Rule::for()`, `Rule::on()`, `RuleSet`, or `ValidationHandler` so Fynix has object context.
+
+Pass a closure when the comparison value must be derived from the current
+object. The closure receives the object and returns the value to compare:
+
+```php
+$rule = Rule::for($user)
+    ->string('passwordConfirmation')
+    ->sameAs(static fn (User $user): string => $user->password);
+```
